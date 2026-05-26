@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import AnnouncementBar from './components/AnnouncementBar';
 
 // Pages
@@ -14,6 +15,9 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import Contact from './pages/Contact';
+import Terms from './pages/Terms';
+import Refunds from './pages/Refunds';
 
 // Admin Pages
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -99,6 +103,11 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             
+            {/* Policy Pages */}
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/refunds" element={<Refunds />} />
+            
             {/* Protected Routes */}
             <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -117,6 +126,7 @@ function App() {
               } 
             />
           </Routes>
+          <Footer />
         </div>
           <Toaster position="bottom-right" toastOptions={{
             style: {
