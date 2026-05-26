@@ -144,7 +144,7 @@ export default function Home() {
           </div>
           <div className="flex-1 order-1 md:order-2 flex justify-center">
             <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-gold/50 shadow-xl">
-              <img src="https://images.unsplash.com/photo-1537368910025-702800a968af?auto=format&fit=crop&q=80&w=400" alt="Study Notes" className="w-full h-full object-cover" />
+              <img src={settings.hero_photo_url || 'https://images.unsplash.com/photo-1537368910025-702800a968af?auto=format&fit=crop&q=80&w=400'} alt="Study Notes" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
