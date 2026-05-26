@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import toast from 'react-hot-toast';
 
 export default function Cart() {
-  const { cart, removeFromCart, getTotal, getTotalMRP, getTotalDiscount } = useCart();
+  const { cart, removeFromCart, getTotal, getTotalMRP, getTotalDiscount, appliedCoupon, applyCoupon, removeCoupon } = useCart();
   const navigate = useNavigate();
+  const [couponCode, setCouponCode] = useState('');
+  const [isApplying, setIsApplying] = useState(false);
+
+  const handleApplyCoupon = async () => {
+    setIsApplying(true);
+    const { success, message } = await applyCoupon(couponCode);
+    if (success) {
+      toast.success(message);
+      setCouponCode('');
+    } else {
+      toast.error(message);
+    }
+    setIsApplying(false);
+  };
 
   return (
     <div className="container mx-auto px-6 py-12 pt-24 min-h-screen">
@@ -62,12 +77,42 @@ export default function Cart() {
                 <span className="line-through text-gray-500">₹{getTotalMRP()}</span>
               </div>
               
-              <div className="flex justify-between mb-6 text-cream">
-                <span>Discount:</span>
+              <div className="flex justify-between mb-4 text-cream">
+                <span>Product Discount:</span>
                 <span className="text-green-400">- ₹{getTotalDiscount()}</span>
               </div>
+
+              {/* Coupon Section */}
+              <div className="py-4 border-t border-b border-white/10 mb-4">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 p-3 rounded-lg">
+                    <div>
+                      <span className="text-green-400 font-bold block">Coupon Applied!</span>
+                      <span className="text-sm text-green-400/80">{appliedCoupon.code}</span>
+                    </div>
+                    <button onClick={removeCoupon} className="text-red-400 text-sm hover:underline">Remove</button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Enter Coupon Code" 
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      className="flex-1 bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold"
+                    />
+                    <button 
+                      onClick={handleApplyCoupon}
+                      disabled={isApplying || !couponCode}
+                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      {isApplying ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+              </div>
               
-              <div className="flex justify-between items-end mb-8 pt-4 border-t border-white/10">
+              <div className="flex justify-between items-end mb-8 pt-4">
                 <span className="text-xl text-white font-bold">Total:</span>
                 <span className="text-3xl font-playfair text-gold font-bold">₹{getTotal()}</span>
               </div>

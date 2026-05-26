@@ -7,7 +7,7 @@ import { loadCashfreeScript } from '../lib/cashfree';
 import toast from 'react-hot-toast';
 
 export default function Checkout() {
-  const { cart, getTotal, getTotalMRP, getTotalDiscount, clearCart } = useCart();
+  const { cart, getTotal, getTotalMRP, getTotalDiscount, clearCart, appliedCoupon } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -87,8 +87,7 @@ export default function Checkout() {
 
       // 3. Open Checkout
       cashfree.checkout({
-        paymentSessionId: payment_session_id,
-        returnUrl: window.location.origin + "/profile?order_id={order_id}",
+        paymentSessionId: payment_session_id
       }).then(async (result: any) => {
         if (result.error) {
           toast.error('Payment failed: ' + result.error.message);
@@ -173,8 +172,16 @@ export default function Checkout() {
                </div>
                {getTotalDiscount() > 0 && (
                  <div className="flex justify-between text-cream">
-                   <span>Discount</span>
+                   <span>Product Discount</span>
                    <span className="text-green-400">- ₹{getTotalDiscount()}</span>
+                 </div>
+               )}
+               {appliedCoupon && (
+                 <div className="flex justify-between text-green-400 bg-green-500/10 p-2 rounded -mx-2 px-2">
+                   <span>Coupon: {appliedCoupon.code}</span>
+                   <span className="font-bold">
+                     - {appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}%` : `₹${appliedCoupon.discount_value}`}
+                   </span>
                  </div>
                )}
                <div className="flex justify-between text-xl font-bold text-white pt-4 border-t border-white/10">

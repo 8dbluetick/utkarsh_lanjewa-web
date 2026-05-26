@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, customer_id, customer_email, customer_phone, order_id } = await req.json()
+    const { amount, customer_id, customer_email, customer_phone, order_id, return_url } = await req.json()
 
     // Get Cashfree credentials from Edge Function secrets
     const appId = Deno.env.get('CASHFREE_APP_ID')
@@ -37,7 +37,7 @@ serve(async (req) => {
         customer_phone: customer_phone || "9999999999"
       },
       order_meta: {
-        return_url: "https://your-website-url.com/checkout?order_id={order_id}"
+        return_url: return_url || "https://utkarshlanjewar.com/profile?order_id={order_id}"
       }
     }
 
