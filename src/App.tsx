@@ -55,11 +55,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 import AdminProducts from './pages/admin/Products';
-
-const Dashboard = () => <div className="text-white text-2xl font-playfair">Admin Dashboard <br/><span className="text-sm text-cream/50">(Analytics logic goes here)</span></div>;
-const Orders = () => <div className="text-white text-2xl font-playfair">Orders Management</div>;
-const Subscribers = () => <div className="text-white text-2xl font-playfair">Subscribers Management</div>;
-const Settings = () => <div className="text-white text-2xl font-playfair">Settings</div>;
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminOrders from './pages/admin/Orders';
+import AdminSubscribers from './pages/admin/Subscribers';
+import AdminSettings from './pages/admin/Settings';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -98,11 +97,11 @@ function App() {
             <Route path="/admin/*" element={
                 <AdminGuard>
                   <Routes>
-                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="products" element={<AdminProducts />} />
-                    <Route path="orders" element={<Orders />} />
-                    <Route path="subscribers" element={<Subscribers />} />
-                    <Route path="settings" element={<Settings />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="subscribers" element={<AdminSubscribers />} />
+                    <Route path="settings" element={<AdminSettings />} />
                     <Route path="*" element={<Navigate to="dashboard" replace />} />
                   </Routes>
                 </AdminGuard>
