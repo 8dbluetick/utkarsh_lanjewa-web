@@ -26,7 +26,26 @@ export default function Checkout() {
     }
 
     setIsProcessing(true);
-    const finalTotal = getFinalTotal();
+    toast.loading('Verifying prices...', { id: 'price_check' });
+
+    // ✅ Always fetch LIVE prices from DB to prevent stale cart cache issues
+    const productIds = cart.map(item => item.id);
+    const { data: liveProducts, error: priceError } = await supabase
+      .from('products')
+      .select('id, price, is_free')
+      .in('id', productIds);
+
+    if (priceError || !liveProducts) {
+      toast.error('Failed to verify prices. Please try again.', { id: 'price_check' });
+      setIsProcessing(false);
+      return;
+    }
+
+    // Calculate the REAL total using live DB prices
+    const liveTotal = liveProducts.reduce((acc, p) => acc + (p.is_free ? 0 : p.price), 0);
+    toast.dismiss('price_check');
+
+    const finalTotal = liveTotal;
 
     // If the total is 0 (all items are free), bypass Cashfree
     if (finalTotal === 0) {
@@ -52,6 +71,7 @@ export default function Checkout() {
     }
 
     // Cashfree Flow
+
     const isLoaded = await loadCashfreeScript();
     if (!isLoaded) {
       toast.error('Failed to load Cashfree SDK');
