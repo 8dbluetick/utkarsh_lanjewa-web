@@ -72,7 +72,12 @@ const AdminGuard = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="p-8 text-white">Loading...</div>;
   if (!user) return <Navigate to="/" replace />;
-  // For demo: allowing all logged in users. In prod, check against admin_email settings table.
+  
+  // Secure check: Only allow this specific email to access the admin panel
+  if (user.email !== 'sb108750@gmail.com') {
+    return <Navigate to="/" replace />;
+  }
+  
   return <AdminLayout>{children}</AdminLayout>;
 };
 
