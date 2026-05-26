@@ -26,8 +26,13 @@ export default function Navbar() {
         <div className="flex items-center gap-8">
           <Link to="/" className="text-cream hover:text-gold transition text-sm font-semibold uppercase tracking-wider hidden md:block">Home</Link>
           <Link to="/shop" className="text-cream hover:text-gold transition text-sm font-semibold uppercase tracking-wider hidden md:block">Shop</Link>
-          <a href="#about" className="text-cream hover:text-gold transition text-sm font-semibold uppercase tracking-wider hidden md:block">About</a>
           
+          {user?.email === 'sb108750@gmail.com' && (
+             <Link to="/admin/products" className="text-maroon hover:text-white bg-maroon/20 px-3 py-1 rounded transition text-sm font-bold uppercase tracking-wider hidden md:block">
+               Admin Panel
+             </Link>
+          )}
+
           {user ? (
             <Link to="/profile" className="flex items-center gap-2 hover:opacity-80 transition">
               <img src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${profile?.full_name}&background=C8860A&color=fff`} alt="Profile" className="w-8 h-8 rounded-full border border-gold" />

@@ -60,6 +60,13 @@ export default function Profile() {
             <h2 className="text-xl font-bold text-white mb-1">{profile.full_name}</h2>
             <p className="text-sm text-cream/70 mb-4">{profile.email}</p>
             <p className="text-xs text-cream/50 mb-6">Member since {format(new Date(profile.created_at), 'MMM yyyy')}</p>
+            
+            {profile.email === 'sb108750@gmail.com' && (
+              <Link to="/admin/products" className="block w-full bg-gold text-primary font-bold px-4 py-2 rounded mb-3 hover:bg-white transition">
+                Go to Admin Panel
+              </Link>
+            )}
+
             <button 
               onClick={signOut}
               className="w-full border border-maroon text-maroon hover:bg-maroon hover:text-white px-4 py-2 rounded transition"
