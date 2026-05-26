@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 export default function Home() {
   const [email, setEmail] = useState('');
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>({});
 
   useEffect(() => {
     async function fetchFeatured() {
@@ -17,7 +18,15 @@ export default function Home() {
         .limit(3);
       if (data) setFeaturedProducts(data);
     }
+    async function fetchSettings() {
+      const { data } = await supabase.from('settings').select('*');
+      if (data) {
+        const s = data.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
+        setSettings(s);
+      }
+    }
     fetchFeatured();
+    fetchSettings();
   }, []);
 
   const handleSubscribe = async (e: React.FormEvent) => {
@@ -36,22 +45,26 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative w-full bg-primary overflow-hidden pt-24 pb-16">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')]"></div>
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: settings.hero_bg_url ? `url(${settings.hero_bg_url})` : `url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')`,
+          backgroundSize: settings.hero_bg_url ? 'cover' : 'auto',
+          backgroundPosition: 'center'
+        }}></div>
         <div className="container mx-auto px-6 relative z-10 flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-5xl md:text-6xl font-bold font-playfair mb-6 text-transparent bg-clip-text gold-gradient">
-              BAMS Notes That Actually Work
+              {settings.hero_heading || 'BAMS Notes That Actually Work'}
             </h1>
-            <p className="text-lg md:text-xl text-cream mb-8 opacity-90 max-w-2xl">
-              Handwritten, High-Yield, Exam-Ready Notes by Utkarsh S Lanjewar — 2nd Year BAMS.
+            <p className="text-lg md:text-xl text-cream mb-8 opacity-90 max-w-2xl whitespace-pre-line">
+              {settings.hero_subtext || 'Handwritten, High-Yield, Exam-Ready Notes by Utkarsh S Lanjewar — 2nd Year BAMS.'}
             </p>
             <Link to="/shop" className="inline-block bg-gold text-primary font-bold px-8 py-4 rounded-full hover:scale-105 transition-transform shadow-[0_0_15px_rgba(200,134,10,0.5)]">
-              Browse Notes →
+              {settings.hero_cta_text || 'Browse Notes →'}
             </Link>
           </div>
           <div className="flex-1 flex justify-center">
             <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-gold overflow-hidden relative shadow-[0_0_30px_rgba(200,134,10,0.3)]">
-              <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400" alt="Utkarsh" className="w-full h-full object-cover" />
+              <img src={settings.hero_photo_url || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400'} alt="Utkarsh" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
@@ -61,16 +74,16 @@ export default function Home() {
       <section className="bg-card-bg border-y border-[rgba(200,134,10,0.2)] py-8">
         <div className="container mx-auto px-6 flex flex-wrap justify-around gap-8 text-center">
           <div>
-            <div className="text-3xl font-bold text-gold font-playfair">9+</div>
-            <div className="text-cream opacity-80 text-sm tracking-wider uppercase mt-1">Subjects</div>
+            <div className="text-3xl font-bold text-gold font-playfair">{settings.stat_1_value || '9+'}</div>
+            <div className="text-cream opacity-80 text-sm tracking-wider uppercase mt-1">{settings.stat_1_label || 'Subjects'}</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-gold font-playfair">500+</div>
-            <div className="text-cream opacity-80 text-sm tracking-wider uppercase mt-1">Students</div>
+            <div className="text-3xl font-bold text-gold font-playfair">{settings.stat_2_value || '500+'}</div>
+            <div className="text-cream opacity-80 text-sm tracking-wider uppercase mt-1">{settings.stat_2_label || 'Students'}</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-gold font-playfair">4.8★</div>
-            <div className="text-cream opacity-80 text-sm tracking-wider uppercase mt-1">Rated</div>
+            <div className="text-3xl font-bold text-gold font-playfair">{settings.stat_3_value || '4.8★'}</div>
+            <div className="text-cream opacity-80 text-sm tracking-wider uppercase mt-1">{settings.stat_3_label || 'Rated'}</div>
           </div>
         </div>
       </section>

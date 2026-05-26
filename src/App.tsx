@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import AnnouncementBar from './components/AnnouncementBar';
 
 // Pages
 import Home from './pages/Home';
@@ -85,6 +86,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <div className="min-h-screen flex flex-col bg-primary text-cream font-inter">
+          <AnnouncementBar />
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
