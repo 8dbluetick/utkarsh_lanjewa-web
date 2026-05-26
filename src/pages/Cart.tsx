@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
 export default function Cart() {
-  const { cart, removeFromCart, getTotal, getTotalMRP, getTotalDiscount } = useCart();
+  const { cart, removeFromCart, getTotal, getTotalMRP, getTotalDiscount, appliedCoupon, getFinalTotal } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -66,10 +66,17 @@ export default function Cart() {
                 <span>Discount:</span>
                 <span className="text-green-400">- ₹{getTotalDiscount()}</span>
               </div>
+
+              {appliedCoupon && (
+                <div className="flex justify-between mb-6 text-cream">
+                  <span>Coupon ({appliedCoupon.discount_percentage}%):</span>
+                  <span className="text-green-400">- ₹{Math.round((getTotal() * appliedCoupon.discount_percentage) / 100)}</span>
+                </div>
+              )}
               
               <div className="flex justify-between items-end mb-8 pt-4 border-t border-white/10">
                 <span className="text-xl text-white font-bold">Total:</span>
-                <span className="text-3xl font-playfair text-gold font-bold">₹{getTotal()}</span>
+                <span className="text-3xl font-playfair text-gold font-bold">₹{getFinalTotal()}</span>
               </div>
               
               <button 

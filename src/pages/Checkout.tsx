@@ -7,10 +7,11 @@ import { loadCashfreeScript } from '../lib/cashfree';
 import toast from 'react-hot-toast';
 
 export default function Checkout() {
-  const { cart, getTotal, getTotalMRP, getTotalDiscount, clearCart } = useCart();
+  const { cart, getTotal, getTotalMRP, getTotalDiscount, clearCart, appliedCoupon, applyCoupon, removeCoupon, getCouponDiscount, getFinalTotal } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
 
   // If cart is empty, redirect back to cart
   if (cart.length === 0) {
@@ -25,10 +26,10 @@ export default function Checkout() {
     }
 
     setIsProcessing(true);
-    const total = getTotal();
+    const finalTotal = getFinalTotal();
 
-    // If the total is 0 (all items are free), bypass Razorpay
-    if (total === 0) {
+    // If the total is 0 (all items are free), bypass Cashfree
+    if (finalTotal === 0) {
       const inserts = cart.map(item => ({
         user_id: user.id,
         product_id: item.id,
@@ -64,7 +65,7 @@ export default function Checkout() {
       // 1. Call our Edge Function to get the payment_session_id
       const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-cashfree-order', {
         body: { 
-          amount: total,
+          amount: finalTotal,
           customer_id: user.id,
           customer_email: user.email,
           customer_phone: '9999999999', // Replace with actual if available
@@ -101,13 +102,23 @@ export default function Checkout() {
         }
         if (result.paymentDetails) {
            toast.loading('Verifying payment...', { id: 'payment_verify' });
+           
+           // Update coupon usage if applied
+           if (appliedCoupon) {
+             await supabase
+               .from('coupons')
+               .update({ current_uses: 0 }) // Note: This will be incremented on backend
+               .eq('code', appliedCoupon.code);
+           }
+           
            // Insert a record for each item in the cart
            const inserts = cart.map(item => ({
              user_id: user.id,
              product_id: item.id,
              amount_paid: item.is_free ? 0 : item.price,
              status: 'completed',
-             razorpay_payment_id: payment_session_id // Store session ID for reference
+             razorpay_payment_id: payment_session_id, // Store session ID for reference
+             coupon_code: appliedCoupon?.code || null
            }));
 
            const { error } = await supabase.from('purchases').insert(inserts);
@@ -126,6 +137,13 @@ export default function Checkout() {
     } catch (error: any) {
       toast.error('Error starting payment: ' + error.message, { id: 'payment' });
       setIsProcessing(false);
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    const success = await applyCoupon(couponCode);
+    if (success) {
+      setCouponCode('');
     }
   };
 
@@ -166,6 +184,38 @@ export default function Checkout() {
           <div className="glass-card p-6 sticky top-24">
              <h2 className="text-xl font-playfair text-white mb-6 border-b border-white/10 pb-4">Payment Summary</h2>
              
+             {/* Coupon Section */}
+             <div className="mb-6 p-4 bg-primary/50 rounded-lg border border-gold/20">
+               {appliedCoupon ? (
+                 <div className="flex items-center justify-between mb-3">
+                   <span className="text-green-400 font-bold">✓ Coupon Applied: {appliedCoupon.code}</span>
+                   <button
+                     onClick={removeCoupon}
+                     className="text-xs text-red-400 hover:text-red-300 font-bold"
+                   >
+                     Remove
+                   </button>
+                 </div>
+               ) : (
+                 <div className="flex gap-2">
+                   <input
+                     type="text"
+                     value={couponCode}
+                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                     onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                     placeholder="Enter coupon code..."
+                     className="flex-1 bg-black/50 border border-white/20 text-white px-3 py-2 rounded text-sm placeholder-gray-500 focus:outline-none focus:border-gold"
+                   />
+                   <button
+                     onClick={handleApplyCoupon}
+                     className="bg-gold hover:bg-yellow-500 text-primary font-bold px-4 py-2 rounded text-sm transition"
+                   >
+                     Apply
+                   </button>
+                 </div>
+               )}
+             </div>
+             
              <div className="space-y-4 mb-6">
                <div className="flex justify-between text-cream">
                  <span>Subtotal (MRP)</span>
@@ -177,9 +227,19 @@ export default function Checkout() {
                    <span className="text-green-400">- ₹{getTotalDiscount()}</span>
                  </div>
                )}
+               <div className="flex justify-between text-cream">
+                 <span>Subtotal</span>
+                 <span>₹{getTotal()}</span>
+               </div>
+               {appliedCoupon && getCouponDiscount() > 0 && (
+                 <div className="flex justify-between text-cream">
+                   <span>Coupon Discount ({appliedCoupon.discount_percentage}%)</span>
+                   <span className="text-green-400 font-bold">- ₹{getCouponDiscount()}</span>
+                 </div>
+               )}
                <div className="flex justify-between text-xl font-bold text-white pt-4 border-t border-white/10">
-                 <span>Total</span>
-                 <span className="text-gold font-playfair">₹{getTotal()}</span>
+                 <span>Total Amount</span>
+                 <span className="text-gold font-playfair">₹{getFinalTotal()}</span>
                </div>
              </div>
 
@@ -192,7 +252,7 @@ export default function Checkout() {
                    : 'bg-gold hover:bg-yellow-500 text-primary shadow-[0_0_15px_rgba(200,134,10,0.3)]'
                }`}
              >
-               {isProcessing ? 'Processing...' : `Pay ₹${getTotal()} Securely`}
+               {isProcessing ? 'Processing...' : `Pay ₹${getFinalTotal()} Securely`}
              </button>
 
              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-cream opacity-60">

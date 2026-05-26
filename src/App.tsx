@@ -27,6 +27,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const navLinks = [
     { name: 'Dashboard', path: '/admin/dashboard' },
     { name: 'Products', path: '/admin/products' },
+    { name: 'Coupons', path: '/admin/coupons' },
     { name: 'Orders', path: '/admin/orders' },
     { name: 'Subscribers', path: '/admin/subscribers' },
     { name: 'Settings', path: '/admin/settings' },
@@ -67,6 +68,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminOrders from './pages/admin/Orders';
 import AdminSubscribers from './pages/admin/Subscribers';
 import AdminSettings from './pages/admin/Settings';
+import AdminCoupons from './pages/admin/Coupons';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -117,6 +119,7 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="products" element={<AdminProducts />} />
+                    <Route path="coupons" element={<AdminCoupons />} />
                     <Route path="orders" element={<AdminOrders />} />
                     <Route path="subscribers" element={<AdminSubscribers />} />
                     <Route path="settings" element={<AdminSettings />} />

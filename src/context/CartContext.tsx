@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 export type CartItem = {
@@ -10,8 +11,14 @@ export type CartItem = {
   is_free: boolean;
 };
 
+export type AppliedCoupon = {
+  code: string;
+  discount_percentage: number;
+};
+
 type CartContextType = {
   cart: CartItem[];
+  appliedCoupon: AppliedCoupon | null;
   addToCart: (product: any) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
@@ -19,10 +26,15 @@ type CartContextType = {
   getTotalMRP: () => number;
   getTotalDiscount: () => number;
   isInCart: (productId: string) => boolean;
+  applyCoupon: (code: string) => Promise<boolean>;
+  removeCoupon: () => void;
+  getCouponDiscount: () => number;
+  getFinalTotal: () => number;
 };
 
 const CartContext = createContext<CartContextType>({
   cart: [],
+  appliedCoupon: null,
   addToCart: () => {},
   removeFromCart: () => {},
   clearCart: () => {},
@@ -30,21 +42,36 @@ const CartContext = createContext<CartContextType>({
   getTotalMRP: () => 0,
   getTotalDiscount: () => 0,
   isInCart: () => false,
+  applyCoupon: async () => false,
+  removeCoupon: () => {},
+  getCouponDiscount: () => 0,
+  getFinalTotal: () => 0,
 });
 
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
   // Load from local storage on init
   useEffect(() => {
     const savedCart = localStorage.getItem('usl_cart');
+    const savedCoupon = localStorage.getItem('usl_coupon');
+    
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
       } catch (e) {
         console.error('Failed to parse cart data');
+      }
+    }
+    
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon));
+      } catch (e) {
+        console.error('Failed to parse coupon data');
       }
     }
   }, []);
@@ -53,6 +80,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('usl_cart', JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem('usl_coupon', JSON.stringify(appliedCoupon));
+    } else {
+      localStorage.removeItem('usl_coupon');
+    }
+  }, [appliedCoupon]);
 
   const addToCart = (product: any) => {
     if (cart.find(item => item.id === product.id)) {
@@ -80,6 +115,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clearCart = () => {
     setCart([]);
+    setAppliedCoupon(null);
   };
 
   const getTotal = () => {
@@ -97,12 +133,85 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return getTotalMRP() - getTotal();
   };
 
+  const getCouponDiscount = () => {
+    if (!appliedCoupon) return 0;
+    return Math.round((getTotal() * appliedCoupon.discount_percentage) / 100);
+  };
+
+  const getFinalTotal = () => {
+    return Math.max(0, getTotal() - getCouponDiscount());
+  };
+
   const isInCart = (productId: string) => {
     return cart.some(item => item.id === productId);
   };
 
+  const applyCoupon = async (code: string): Promise<boolean> => {
+    if (!code.trim()) {
+      toast.error('Please enter a coupon code');
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', code.toUpperCase().trim())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        toast.error('Invalid coupon code');
+        return false;
+      }
+
+      // Check expiry
+      if (new Date(data.expiry_date) < new Date()) {
+        toast.error('This coupon has expired');
+        return false;
+      }
+
+      // Check max uses
+      if (data.max_uses && data.current_uses >= data.max_uses) {
+        toast.error('This coupon has reached its usage limit');
+        return false;
+      }
+
+      setAppliedCoupon({
+        code: data.code,
+        discount_percentage: data.discount_percentage
+      });
+
+      toast.success(`🎉 Coupon applied! ${data.discount_percentage}% OFF`);
+      return true;
+    } catch (err: any) {
+      toast.error('Error applying coupon');
+      console.error(err);
+      return false;
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    toast.success('Coupon removed');
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getTotal, getTotalMRP, getTotalDiscount, isInCart }}>
+    <CartContext.Provider value={{ 
+      cart, 
+      appliedCoupon,
+      addToCart, 
+      removeFromCart, 
+      clearCart, 
+      getTotal, 
+      getTotalMRP, 
+      getTotalDiscount, 
+      isInCart,
+      applyCoupon,
+      removeCoupon,
+      getCouponDiscount,
+      getFinalTotal
+    }}>
       {children}
     </CartContext.Provider>
   );

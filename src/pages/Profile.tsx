@@ -91,22 +91,37 @@ export default function Profile() {
             ) : (
               <div className="flex flex-col gap-4">
                 {purchases.map(purchase => (
-                  <div key={purchase.id} className="bg-primary/50 border border-white/5 rounded-lg p-4 flex flex-col sm:flex-row items-center gap-6">
-                    <div className="w-16 h-16 bg-gray-900 rounded overflow-hidden shrink-0 hidden sm:block">
-                      {purchase.products.banner_url && <img src={purchase.products.banner_url} className="w-full h-full object-cover" alt="banner" />}
+                  <div key={purchase.id} className="bg-primary/50 border border-white/5 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-6 flex-1">
+                      <div className="w-16 h-16 bg-gray-900 rounded overflow-hidden shrink-0 hidden sm:block">
+                        {purchase.products.banner_url && <img src={purchase.products.banner_url} className="w-full h-full object-cover" alt="banner" />}
+                      </div>
+                      <div className="flex-1 text-center sm:text-left">
+                        <h3 className="font-bold text-white mb-1">{purchase.products.title}</h3>
+                        <p className="text-xs text-cream/60">Purchased on {format(new Date(purchase.purchased_at), 'dd MMM yyyy')}</p>
+                        {purchase.products.subject && (
+                          <p className="text-xs text-cream/50 mt-1">Subject: {purchase.products.subject}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 text-center sm:text-left">
-                      <h3 className="font-bold text-white mb-1">{purchase.products.title}</h3>
-                      <p className="text-xs text-cream/60">Purchased on {format(new Date(purchase.purchased_at), 'dd MMM yyyy')}</p>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="font-bold text-gold text-right">
+                        <p className="text-sm text-cream/70">Amount Paid</p>
+                        <p className="text-lg">₹{purchase.amount_paid}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleDownload(purchase.products.file_url)}
+                        className={`font-bold px-6 py-2 rounded transition whitespace-nowrap ${
+                          purchase.products.file_url
+                            ? 'bg-gold hover:bg-yellow-500 text-primary cursor-pointer' 
+                            : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                        }`}
+                        title={!purchase.products.file_url ? 'File not available yet' : 'Download your purchased file'}
+                      >
+                        {purchase.products.file_url ? '⬇️ Download' : 'Not Ready'}
+                      </button>
                     </div>
-                    <div className="font-bold text-gold">₹{purchase.amount_paid}</div>
-                    <button 
-                      onClick={() => handleDownload(purchase.products.file_url)}
-                      disabled={!purchase.products.file_url}
-                      className="bg-gold text-primary font-bold px-6 py-2 rounded hover:bg-white transition disabled:opacity-50"
-                    >
-                      Download
-                    </button>
                   </div>
                 ))}
               </div>
