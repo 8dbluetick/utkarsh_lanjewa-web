@@ -51,8 +51,8 @@ export default function Shop() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((product) => (
-            <div key={product.id} className="glass-card hover:border-gold transition-colors duration-300 overflow-hidden flex flex-col group">
+          {products.map((product, index) => (
+            <div key={product.id} className={`glass-card hover:border-gold transition-colors duration-300 overflow-hidden flex flex-col group animate-fade-up delay-${((index % 4) + 1) * 100}`}>
               <div className="h-56 w-full relative overflow-hidden bg-gray-900">
                 {product.banner_url ? (
                   <img src={product.banner_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

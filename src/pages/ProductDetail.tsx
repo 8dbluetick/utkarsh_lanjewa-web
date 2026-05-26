@@ -145,7 +145,7 @@ export default function ProductDetail() {
     <div className="container mx-auto px-6 py-12 pt-24">
       <div className="flex flex-col md:flex-row gap-12 mb-16">
         {/* Left Column (Banner/Video) */}
-        <div className="md:w-1/2">
+        <div className="md:w-1/2 animate-fade-in">
           {product.video_url ? (
             <div className="rounded-xl overflow-hidden shadow-[0_0_30px_rgba(200,134,10,0.15)] bg-black aspect-video relative">
               <video 
@@ -167,7 +167,7 @@ export default function ProductDetail() {
         </div>
 
         {/* Right Column */}
-        <div className="md:w-1/2 flex flex-col justify-center">
+        <div className="md:w-1/2 flex flex-col justify-center animate-fade-up delay-100">
           <div className="flex items-center gap-3 mb-4">
             <span className="inline-block bg-maroon/20 text-maroon font-bold px-3 py-1 rounded-full text-sm uppercase tracking-wider border border-maroon/30">
               {product.subject}

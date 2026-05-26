@@ -57,17 +57,19 @@ export default function Home() {
         }}></div>
         <div className="container mx-auto px-6 relative z-10 flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-5xl md:text-6xl font-bold font-playfair mb-6 text-transparent bg-clip-text gold-gradient">
+            <h1 className="text-5xl md:text-6xl font-bold font-playfair mb-6 text-transparent bg-clip-text gold-gradient animate-fade-up delay-100">
               {settings.hero_heading || 'BAMS Notes That Actually Work'}
             </h1>
-            <p className="text-lg md:text-xl text-cream mb-8 opacity-90 max-w-2xl whitespace-pre-line">
+            <p className="text-lg md:text-xl text-cream mb-8 opacity-90 max-w-2xl whitespace-pre-line animate-fade-up delay-200">
               {settings.hero_subtext || 'Handwritten, High-Yield, Exam-Ready Notes by Utkarsh S Lanjewar — 2nd Year BAMS.'}
             </p>
-            <Link to="/shop" className="inline-block bg-gold text-primary font-bold px-8 py-4 rounded-full hover:scale-105 transition-transform shadow-[0_0_15px_rgba(200,134,10,0.5)]">
-              {settings.hero_cta_text || 'Browse Notes →'}
-            </Link>
+            <div className="animate-fade-up delay-300">
+              <Link to="/shop" className="inline-block bg-gold text-primary font-bold px-8 py-4 rounded-full hover:scale-105 transition-transform shadow-[0_0_15px_rgba(200,134,10,0.5)]">
+                {settings.hero_cta_text || 'Browse Notes →'}
+              </Link>
+            </div>
           </div>
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex justify-center animate-fade-in delay-200">
             <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-gold overflow-hidden relative shadow-[0_0_30px_rgba(200,134,10,0.3)] bg-gray-900/50">
               <img src={settings.hero_photo_url || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} alt="Utkarsh" className="w-full h-full object-cover" />
             </div>
@@ -100,8 +102,8 @@ export default function Home() {
           <Link to="/shop" className="text-gold hover:underline">View All →</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {featuredProducts.map((product) => (
-            <div key={product.id} className="glass-card hover:border-gold transition-colors duration-300 overflow-hidden flex flex-col group">
+          {featuredProducts.map((product, index) => (
+            <div key={product.id} className={`glass-card hover:border-gold transition-colors duration-300 overflow-hidden flex flex-col group animate-fade-up delay-${((index % 3) + 1) * 100}`}>
               <div className="h-48 w-full relative overflow-hidden bg-gray-900">
                 {product.banner_url ? (
                   <img src={product.banner_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
