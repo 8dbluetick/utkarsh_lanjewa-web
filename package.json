@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
     "autoprefixer": "^10.5.0",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^4.3.0",
     "lucide-react": "^1.16.0",
     "postcss": "^8.5.15",
