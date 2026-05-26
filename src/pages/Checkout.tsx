@@ -97,7 +97,7 @@ export default function Checkout() {
         throw new Error(edgeData?.error || 'Failed to create Cashfree session');
       }
 
-      const { payment_session_id } = edgeData;
+      const { payment_session_id, order_id } = edgeData;
 
       toast.dismiss('payment');
 
@@ -106,10 +106,19 @@ export default function Checkout() {
         mode: "production", // Live Mode
       });
 
+      // ✅ Save cart to localStorage BEFORE opening Cashfree
+      // This is needed in case Cashfree redirects the user (UPI/NetBanking)
+      const pendingOrder = {
+        order_id,
+        user_id: user.id,
+        products: cart.map(item => ({ id: item.id, price: item.is_free ? 0 : item.price }))
+      };
+      localStorage.setItem('pending_cashfree_order', JSON.stringify(pendingOrder));
+
       // 3. Open Checkout
       cashfree.checkout({
         paymentSessionId: payment_session_id,
-        returnUrl: window.location.origin + "/profile?order_id={order_id}",
+        returnUrl: window.location.origin + "/profile?order_id=" + order_id,
       }).then(async (result: any) => {
         if (result.error) {
           toast.error('Payment failed: ' + result.error.message);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
@@ -9,25 +9,93 @@ export default function Profile() {
   const { profile, signOut } = useAuth();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ✅ Verify Cashfree payment when redirected back from payment page
+  useEffect(() => {
+    const orderId = searchParams.get('order_id');
+    if (!orderId || !profile) return;
+
+    async function verifyAndRecord() {
+      toast.loading('Verifying your payment...', { id: 'verify' });
+
+      try {
+        // 1. Call verify edge function
+        const { data, error } = await supabase.functions.invoke('verify-cashfree-payment', {
+          body: { order_id: orderId }
+        });
+
+        if (error || !data) throw new Error('Verification failed');
+
+        if (data.order_status === 'PAID') {
+          // 2. Get pending order from localStorage
+          const pendingRaw = localStorage.getItem('pending_cashfree_order');
+          if (pendingRaw) {
+            const pending = JSON.parse(pendingRaw);
+            
+            if (pending.order_id === orderId) {
+              // 3. Check if already recorded (prevent duplicate inserts)
+              const { data: existing } = await supabase
+                .from('purchases')
+                .select('id')
+                .eq('razorpay_payment_id', orderId)
+                .limit(1);
+
+              if (!existing || existing.length === 0) {
+                // 4. Insert purchase records
+                const inserts = pending.products.map((p: any) => ({
+                  user_id: profile!.id,
+                  product_id: p.id,
+                  amount_paid: p.price,
+                  status: 'completed',
+                  razorpay_payment_id: orderId
+                }));
+                
+                const { error: insertError } = await supabase.from('purchases').insert(inserts);
+                if (insertError) throw insertError;
+              }
+
+              // 5. Cleanup
+              localStorage.removeItem('pending_cashfree_order');
+              localStorage.removeItem('cart');
+              localStorage.removeItem('appliedCoupon');
+              
+              toast.success('Payment successful! Your notes are unlocked! 🎉', { id: 'verify' });
+              fetchPurchases();
+            }
+          } else {
+            toast.success('Payment verified!', { id: 'verify' });
+          }
+        } else {
+          toast.error(`Payment status: ${data.order_status}. If money was deducted, please contact support.`, { id: 'verify' });
+        }
+      } catch (err: any) {
+        toast.error('Could not verify payment: ' + err.message, { id: 'verify' });
+      }
+
+      // Remove order_id from URL
+      setSearchParams({});
+    }
+
+    verifyAndRecord();
+  }, [profile, searchParams]);
+
+  async function fetchPurchases() {
+    if (!profile) return;
+    const { data, error } = await supabase
+      .from('purchases')
+      .select(`*, products (*)`)
+      .eq('user_id', profile.id)
+      .eq('status', 'completed')
+      .order('purchased_at', { ascending: false });
+      
+    if (!error && data) {
+      setPurchases(data);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function fetchPurchases() {
-      if (!profile) return;
-      const { data, error } = await supabase
-        .from('purchases')
-        .select(`
-          *,
-          products (*)
-        `)
-        .eq('user_id', profile.id)
-        .eq('status', 'completed')
-        .order('purchased_at', { ascending: false });
-        
-      if (!error && data) {
-        setPurchases(data);
-      }
-      setLoading(false);
-    }
     fetchPurchases();
   }, [profile]);
 
@@ -44,6 +112,7 @@ export default function Profile() {
   };
 
   if (!profile) return null;
+
 
   return (
     <div className="container mx-auto px-6 py-12 pt-24 min-h-screen">
