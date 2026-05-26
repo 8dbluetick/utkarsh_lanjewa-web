@@ -81,7 +81,7 @@ export default function Checkout() {
 
       // 2. Initialize Cashfree
       const cashfree = (window as any).Cashfree({
-        mode: "sandbox", // CHANGE TO "production" WHEN LIVE
+        mode: "production", // Live Mode
       });
 
       // 3. Open Checkout
