@@ -1,8 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
+// ✅ SECURITY: Restrict CORS to our actual domain only
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') || 'https://utkarshlanjewar.com'
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -71,9 +75,11 @@ serve(async (req) => {
       },
     )
   } catch (error) {
+    // ✅ SECURITY: Never expose internal error details to client
+    console.error('Cashfree order creation failed:', error.message)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
+      JSON.stringify({ error: 'Failed to initialize payment. Please try again.' }),
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       },

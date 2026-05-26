@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import DOMPurify from 'dompurify';
 import toast from 'react-hot-toast';
 
 export default function ProductDetail() {
@@ -202,7 +203,7 @@ export default function ProductDetail() {
         <h2 className="text-3xl font-playfair text-gold mb-6 border-b border-white/10 pb-4">About These Notes</h2>
         <div 
           className="ql-editor !px-0 prose prose-invert max-w-none text-cream/90"
-          dangerouslySetInnerHTML={{ __html: product.description }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description || '') }}
         />
       </div>
 
