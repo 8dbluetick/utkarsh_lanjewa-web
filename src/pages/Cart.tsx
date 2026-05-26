@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
 export default function Cart() {
-  const { cart, removeFromCart, getTotal } = useCart();
+  const { cart, removeFromCart, getTotal, getTotalMRP, getTotalDiscount } = useCart();
   const navigate = useNavigate();
 
   return (
@@ -59,12 +59,12 @@ export default function Cart() {
               
               <div className="flex justify-between mb-4 text-cream">
                 <span>Items ({cart.length}):</span>
-                <span>₹{getTotal()}</span>
+                <span className="line-through text-gray-500">₹{getTotalMRP()}</span>
               </div>
               
               <div className="flex justify-between mb-6 text-cream">
                 <span>Discount:</span>
-                <span className="text-green-400">- ₹0</span>
+                <span className="text-green-400">- ₹{getTotalDiscount()}</span>
               </div>
               
               <div className="flex justify-between items-end mb-8 pt-4 border-t border-white/10">

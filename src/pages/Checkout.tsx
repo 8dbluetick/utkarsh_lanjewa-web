@@ -7,7 +7,7 @@ import { loadCashfreeScript } from '../lib/cashfree';
 import toast from 'react-hot-toast';
 
 export default function Checkout() {
-  const { cart, getTotal, clearCart } = useCart();
+  const { cart, getTotal, getTotalMRP, getTotalDiscount, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,7 +67,8 @@ export default function Checkout() {
           amount: total,
           customer_id: user.id,
           customer_email: user.email,
-          customer_phone: '9999999999' // Replace with actual if available
+          customer_phone: '9999999999', // Replace with actual if available
+          return_url: window.location.origin + "/profile?order_id={order_id}"
         }
       });
 
@@ -167,13 +168,15 @@ export default function Checkout() {
              
              <div className="space-y-4 mb-6">
                <div className="flex justify-between text-cream">
-                 <span>Subtotal</span>
-                 <span>₹{getTotal()}</span>
+                 <span>Subtotal (MRP)</span>
+                 <span className="line-through text-gray-500">₹{getTotalMRP()}</span>
                </div>
-               <div className="flex justify-between text-cream">
-                 <span>Taxes</span>
-                 <span>Included</span>
-               </div>
+               {getTotalDiscount() > 0 && (
+                 <div className="flex justify-between text-cream">
+                   <span>Discount</span>
+                   <span className="text-green-400">- ₹{getTotalDiscount()}</span>
+                 </div>
+               )}
                <div className="flex justify-between text-xl font-bold text-white pt-4 border-t border-white/10">
                  <span>Total</span>
                  <span className="text-gold font-playfair">₹{getTotal()}</span>

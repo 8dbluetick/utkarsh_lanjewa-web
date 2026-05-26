@@ -5,6 +5,7 @@ export type CartItem = {
   id: string;
   title: string;
   price: number;
+  original_price?: number;
   banner_url?: string;
   is_free: boolean;
 };
@@ -15,6 +16,8 @@ type CartContextType = {
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
   getTotal: () => number;
+  getTotalMRP: () => number;
+  getTotalDiscount: () => number;
   isInCart: (productId: string) => boolean;
 };
 
@@ -24,6 +27,8 @@ const CartContext = createContext<CartContextType>({
   removeFromCart: () => {},
   clearCart: () => {},
   getTotal: () => 0,
+  getTotalMRP: () => 0,
+  getTotalDiscount: () => 0,
   isInCart: () => false,
 });
 
@@ -59,6 +64,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       id: product.id,
       title: product.title,
       price: product.price,
+      original_price: product.original_price,
       banner_url: product.banner_url,
       is_free: product.is_free,
     };
@@ -80,12 +86,23 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return cart.reduce((total, item) => total + (item.is_free ? 0 : item.price), 0);
   };
 
+  const getTotalMRP = () => {
+    return cart.reduce((total, item) => {
+       const mrp = item.original_price || item.price;
+       return total + (item.is_free ? 0 : mrp);
+    }, 0);
+  };
+
+  const getTotalDiscount = () => {
+    return getTotalMRP() - getTotal();
+  };
+
   const isInCart = (productId: string) => {
     return cart.some(item => item.id === productId);
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getTotal, isInCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getTotal, getTotalMRP, getTotalDiscount, isInCart }}>
       {children}
     </CartContext.Provider>
   );
