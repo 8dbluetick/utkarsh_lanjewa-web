@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { loadRazorpayScript } from '../lib/razorpay';
 import toast from 'react-hot-toast';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { addToCart, isInCart } = useCart();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [hasPurchased, setHasPurchased] = useState(false);
@@ -205,9 +207,17 @@ export default function ProductDetail() {
               <button onClick={handleDownload} className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl transition-colors px-8 shadow-lg flex-1">
                 Download {product.is_free ? 'Free Notes' : 'Purchased Notes'}
               </button>
-            ) : (
+            ) : product.is_free ? (
               <button onClick={handleBuyNow} className="bg-gold hover:bg-yellow-500 text-primary font-bold py-4 rounded-xl transition-colors px-8 shadow-[0_0_15px_rgba(200,134,10,0.4)] flex-1 text-lg">
-                {product.is_free ? 'Claim For Free' : 'Buy Now'}
+                Claim For Free
+              </button>
+            ) : isInCart(product.id) ? (
+              <Link to="/cart" className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-xl transition-colors px-8 flex-1 text-lg flex items-center justify-center border border-white/20">
+                Go to Cart
+              </Link>
+            ) : (
+              <button onClick={() => addToCart(product)} className="bg-gold hover:bg-yellow-500 text-primary font-bold py-4 rounded-xl transition-colors px-8 shadow-[0_0_15px_rgba(200,134,10,0.4)] flex-1 text-lg">
+                Add to Cart
               </button>
             )}
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import AnnouncementBar from './components/AnnouncementBar';
 
@@ -11,6 +12,8 @@ import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
 
 // Admin Pages
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -84,16 +87,20 @@ const AdminGuard = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen flex flex-col bg-primary text-cream font-inter">
+      <CartProvider>
+        <BrowserRouter>
+          <div className="min-h-screen flex flex-col bg-primary text-cream font-inter">
           <AnnouncementBar />
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             
+            {/* Protected Routes */}
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
             <Route path="/admin/*" element={
@@ -111,15 +118,16 @@ function App() {
             />
           </Routes>
         </div>
-        <Toaster position="bottom-right" toastOptions={{
-          style: {
-            background: '#C8860A',
-            color: '#0D0F14',
-            borderRadius: '8px',
-            fontWeight: 'bold'
-          }
-        }} />
-      </BrowserRouter>
+          <Toaster position="bottom-right" toastOptions={{
+            style: {
+              background: '#C8860A',
+              color: '#0D0F14',
+              borderRadius: '8px',
+              fontWeight: 'bold'
+            }
+          }} />
+        </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   );
 }

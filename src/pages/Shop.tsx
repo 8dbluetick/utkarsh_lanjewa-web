@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useCart } from '../context/CartContext';
 
 export default function Shop() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
+  const { addToCart, isInCart } = useCart();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -73,9 +75,20 @@ export default function Shop() {
                     <span className="text-2xl font-bold text-gold">₹{product.price}</span>
                     {product.original_price && <span className="text-sm text-gray-500 line-through">₹{product.original_price}</span>}
                   </div>
-                  <Link to={`/product/${product.id}`} className="bg-gold text-primary hover:bg-white px-6 py-2 rounded-lg transition-colors text-sm font-bold">
-                    Buy Now
-                  </Link>
+                  <div className="flex gap-2">
+                    {isInCart(product.id) ? (
+                      <Link to="/cart" className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center justify-center">
+                        In Cart
+                      </Link>
+                    ) : (
+                      <button 
+                        onClick={(e) => { e.preventDefault(); addToCart(product); }}
+                        className="bg-gold text-primary hover:bg-white px-4 py-2 rounded-lg transition-colors text-sm font-bold flex items-center justify-center"
+                      >
+                        Add to Cart
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
