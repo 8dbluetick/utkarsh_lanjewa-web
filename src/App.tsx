@@ -69,7 +69,6 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminOrders from './pages/admin/Orders';
 import AdminSubscribers from './pages/admin/Subscribers';
 import AdminSettings from './pages/admin/Settings';
-import AdminCoupons from './pages/admin/Coupons';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
