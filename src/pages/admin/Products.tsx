@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import toast from 'react-hot-toast';
 
 export default function Products() {
@@ -191,9 +189,14 @@ export default function Products() {
           )}
 
           <div>
-            <label className="block text-cream mb-2">Description (Rich Text)</label>
-            <div className="bg-white text-black rounded overflow-hidden">
-              <ReactQuill theme="snow" value={description} onChange={setDescription} className="h-64 mb-12" />
+            <label className="block text-cream mb-2">Description (Text or HTML)</label>
+            <div className="bg-white rounded overflow-hidden p-1">
+              <textarea 
+                value={description} 
+                onChange={e => setDescription(e.target.value)} 
+                className="w-full h-64 p-4 bg-white text-gray-900 border-none focus:ring-2 focus:ring-gold outline-none resize-y"
+                placeholder="Enter product description here... (You can use simple HTML tags like <b>, <i>, <br> if you want formatting)"
+              />
             </div>
           </div>
 
