@@ -33,7 +33,12 @@ export default function Home() {
     e.preventDefault();
     try {
       const { error } = await supabase.from('subscribers').insert([{ email, source: 'website' }]);
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505' || error.message.includes('unique constraint') || error.message.includes('duplicate key')) {
+          throw new Error('You are already subscribed! 🎉');
+        }
+        throw error;
+      }
       toast.success('Subscribed successfully! 🎉');
       setEmail('');
     } catch (error: any) {
