@@ -63,8 +63,8 @@ export default function Home() {
             </Link>
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-gold overflow-hidden relative shadow-[0_0_30px_rgba(200,134,10,0.3)]">
-              <img src={settings.hero_photo_url || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=400'} alt="Utkarsh" className="w-full h-full object-cover" />
+            <div className="w-64 h-64 md:w-80 md:h-80 rounded-full border-4 border-gold overflow-hidden relative shadow-[0_0_30px_rgba(200,134,10,0.3)] bg-gray-900/50">
+              <img src={settings.hero_photo_url || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} alt="Utkarsh" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
@@ -143,8 +143,8 @@ export default function Home() {
             </a>
           </div>
           <div className="flex-1 order-1 md:order-2 flex justify-center">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-gold/50 shadow-xl">
-              <img src={settings.hero_photo_url || 'https://images.unsplash.com/photo-1537368910025-702800a968af?auto=format&fit=crop&q=80&w=400'} alt="Study Notes" className="w-full h-full object-cover" />
+            <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-gold/50 shadow-xl bg-gray-900/50">
+              <img src={settings.hero_photo_url || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} alt="Study Notes" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
