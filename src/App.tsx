@@ -54,9 +54,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
 };
+import AdminProducts from './pages/admin/Products';
 
 const Dashboard = () => <div className="text-white text-2xl font-playfair">Admin Dashboard <br/><span className="text-sm text-cream/50">(Analytics logic goes here)</span></div>;
-const Products = () => <div className="text-white text-2xl font-playfair">Products Management</div>;
 const Orders = () => <div className="text-white text-2xl font-playfair">Orders Management</div>;
 const Subscribers = () => <div className="text-white text-2xl font-playfair">Subscribers Management</div>;
 const Settings = () => <div className="text-white text-2xl font-playfair">Settings</div>;
@@ -99,7 +99,7 @@ function App() {
                 <AdminGuard>
                   <Routes>
                     <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="products" element={<Products />} />
+                    <Route path="products" element={<AdminProducts />} />
                     <Route path="orders" element={<Orders />} />
                     <Route path="subscribers" element={<Subscribers />} />
                     <Route path="settings" element={<Settings />} />
