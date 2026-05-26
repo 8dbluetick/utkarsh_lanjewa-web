@@ -1,114 +1,54 @@
-:root {
-  --primary: #2D5A27;
-  --primary-light: #3e7b36;
-  --secondary: #D4AF37;
-  --secondary-light: #ebd076;
-  --background: #F9F7F2;
-  --text-main: #1a1a1a;
-  --text-muted: #4a4a4a;
-  --white: #ffffff;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0D0F14;
+  --color-gold: #C8860A;
+  --color-cream: #E8D5A3;
+  --color-maroon: #8B1A1A;
+  --color-card-bg: rgba(255,255,255,0.04);
   
-  --font-heading: 'Playfair Display', serif;
-  --font-body: 'Inter', sans-serif;
+  --font-playfair: "Playfair Display", serif;
+  --font-inter: Inter, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  body {
+    background-color: var(--color-primary);
+    color: #F5F0E8;
+    font-family: var(--font-inter);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair);
+  }
 }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--background);
-  color: var(--text-main);
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer utilities {
+  .glass-card {
+    background-color: var(--color-card-bg);
+    border: 1px solid rgba(200,134,10,0.2);
+    backdrop-filter: blur(4px);
+    border-radius: 0.75rem;
+  }
+  
+  .gold-gradient {
+    background-image: linear-gradient(to right, var(--color-gold), #f5b842);
+  }
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+/* React Quill Custom Overrides */
+.ql-editor strong {
+  color: #C8860A;
   font-weight: 700;
-  color: var(--primary);
-  line-height: 1.2;
 }
-
-a {
-  text-decoration: none;
-  color: inherit;
-  transition: color 0.2s ease;
+.ql-editor u {
+  text-decoration-color: #C8860A;
 }
-
-button {
-  cursor: pointer;
-  font-family: var(--font-body);
-  border: none;
-  background: none;
+.ql-editor ul li::before {
+  content: "✦ ";
+  color: #C8860A;
+  margin-right: 0.5rem;
 }
-
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Utilities */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: 9999px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  gap: 0.5rem;
-}
-
-.btn-primary {
-  background-color: var(--primary);
-  color: var(--white);
-  box-shadow: 0 4px 6px -1px rgba(45, 90, 39, 0.2);
-}
-
-.btn-primary:hover {
-  background-color: var(--primary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px -1px rgba(45, 90, 39, 0.3);
-}
-
-.btn-secondary {
-  background-color: var(--secondary);
-  color: var(--white);
-  box-shadow: 0 4px 6px -1px rgba(212, 175, 55, 0.2);
-}
-
-.btn-secondary:hover {
-  background-color: var(--secondary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px -1px rgba(212, 175, 55, 0.3);
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: var(--primary);
-  border: 2px solid var(--primary);
-}
-
-.btn-outline:hover {
-  background-color: var(--primary);
-  color: var(--white);
-}
-
-/* Glassmorphism utility */
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+.ql-editor h1, .ql-editor h2, .ql-editor h3 {
+  font-family: 'Playfair Display', serif;
 }

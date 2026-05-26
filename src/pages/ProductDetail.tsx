@@ -1,0 +1,210 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { loadRazorpayScript } from '../lib/razorpay';
+import toast from 'react-hot-toast';
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [related, setRelated] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchProduct() {
+      if (!id) return;
+      setLoading(true);
+      const { data } = await supabase.from('products').select('*').eq('id', id).single();
+      if (data) {
+        setProduct(data);
+        
+        // Fetch related
+        const { data: rel } = await supabase
+          .from('products')
+          .select('*')
+          .eq('subject', data.subject)
+          .neq('id', id)
+          .limit(3);
+        if (rel) setRelated(rel);
+      }
+      setLoading(false);
+    }
+    fetchProduct();
+  }, [id]);
+
+  useEffect(() => {
+    async function checkPurchase() {
+      if (!user || !id) return;
+      const { data } = await supabase
+        .from('purchases')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', id)
+        .eq('status', 'completed');
+      if (data && data.length > 0) {
+        setHasPurchased(true);
+      }
+    }
+    checkPurchase();
+  }, [user, id]);
+
+  const handleBuyNow = async () => {
+    if (!user) {
+      toast.error('Please login to purchase');
+      return;
+    }
+    
+    const isLoaded = await loadRazorpayScript();
+    if (!isLoaded) {
+      toast.error('Failed to load Razorpay SDK');
+      return;
+    }
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: product.price * 100, // amount in paise
+      currency: "INR",
+      name: "USL Notes",
+      description: product.title,
+      handler: async function (response: any) {
+        // Create purchase record
+        const { error } = await supabase.from('purchases').insert([{
+          user_id: user.id,
+          product_id: product.id,
+          amount_paid: product.price,
+          razorpay_payment_id: response.razorpay_payment_id,
+          status: 'completed'
+        }]);
+
+        if (error) {
+          toast.error('Payment verified but failed to record purchase');
+        } else {
+          toast.success('Payment successful! 🎉');
+          setHasPurchased(true);
+        }
+      },
+      prefill: {
+        email: user.email,
+      },
+      theme: {
+        color: "#C8860A"
+      }
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.on('payment.failed', function (response: any) {
+      toast.error('Payment failed: ' + response.error.description);
+    });
+    rzp.open();
+  };
+
+  const handleDownload = async () => {
+    if (!product.file_url) {
+      toast.error('File not available for this product yet.');
+      return;
+    }
+    try {
+      const { data, error } = await supabase.storage
+        .from('ebooks')
+        .createSignedUrl(product.file_url, 3600); // 1 hour expiry
+        
+      if (error) throw error;
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (err: any) {
+      toast.error('Failed to download file: ' + err.message);
+    }
+  };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center pt-24"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold"></div></div>;
+  if (!product) return <div className="min-h-screen pt-24 text-center">Product not found.</div>;
+
+  return (
+    <div className="container mx-auto px-6 py-12 pt-24">
+      <div className="flex flex-col md:flex-row gap-12 mb-16">
+        {/* Left Column */}
+        <div className="md:w-1/2">
+          <div className="rounded-xl overflow-hidden shadow-[0_0_30px_rgba(200,134,10,0.15)] bg-gray-900 aspect-video relative">
+            {product.banner_url ? (
+               <img src={product.banner_url} alt={product.title} className="w-full h-full object-cover" />
+            ) : (
+               <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="md:w-1/2 flex flex-col justify-center">
+          <span className="inline-block bg-maroon/20 text-maroon font-bold px-3 py-1 rounded-full text-sm w-max mb-4 uppercase tracking-wider border border-maroon/30">
+            {product.subject}
+          </span>
+          <h1 className="text-3xl md:text-4xl font-playfair text-white mb-4 leading-tight">{product.title}</h1>
+          
+          <div className="flex items-center gap-2 mb-6">
+            <div className="flex text-gold">★★★★★</div>
+            <span className="text-cream opacity-70 text-sm">(5.0 Average)</span>
+          </div>
+
+          <div className="flex items-end gap-4 mb-8">
+            <span className="text-5xl font-bold text-gold font-playfair">₹{product.price}</span>
+            {product.original_price && (
+              <>
+                <span className="text-xl text-gray-500 line-through mb-1">₹{product.original_price}</span>
+                <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-sm font-bold mb-1 border border-green-500/30">
+                  {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
+                </span>
+              </>
+            )}
+          </div>
+
+          {hasPurchased ? (
+            <button onClick={handleDownload} className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl transition-colors w-full md:w-auto px-12 shadow-lg mb-4">
+              Download Notes
+            </button>
+          ) : (
+            <button onClick={handleBuyNow} className="bg-gold hover:bg-yellow-500 text-primary font-bold py-4 rounded-xl transition-colors w-full md:w-auto px-12 shadow-[0_0_15px_rgba(200,134,10,0.4)] mb-4 text-lg">
+              Buy Now
+            </button>
+          )}
+          
+          <p className="text-sm text-cream opacity-60 flex items-center gap-2">
+            🔒 Secure payment via Razorpay
+          </p>
+        </div>
+      </div>
+
+      {/* Description */}
+      <div className="glass-card p-8 md:p-12 mb-16">
+        <h2 className="text-3xl font-playfair text-gold mb-6 border-b border-white/10 pb-4">About These Notes</h2>
+        <div 
+          className="ql-editor !px-0 prose prose-invert max-w-none text-cream/90"
+          dangerouslySetInnerHTML={{ __html: product.description }}
+        />
+      </div>
+
+      {/* Related Products */}
+      {related.length > 0 && (
+        <div>
+          <h2 className="text-3xl font-playfair text-white mb-8 border-l-4 border-gold pl-4">More {product.subject} Notes</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             {related.map(rel => (
+               <Link to={`/product/${rel.id}`} key={rel.id} className="glass-card hover:border-gold transition p-4 flex gap-4 items-center group">
+                 <div className="w-20 h-20 rounded bg-gray-800 overflow-hidden shrink-0">
+                   {rel.banner_url && <img src={rel.banner_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition" />}
+                 </div>
+                 <div>
+                   <h4 className="font-playfair text-white line-clamp-2 mb-1">{rel.title}</h4>
+                   <span className="text-gold font-bold">₹{rel.price}</span>
+                 </div>
+               </Link>
+             ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
