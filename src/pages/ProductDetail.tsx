@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { loadRazorpayScript } from '../lib/razorpay';
 import toast from 'react-hot-toast';
 
 export default function ProductDetail() {
@@ -59,66 +58,21 @@ export default function ProductDetail() {
       toast.error('Please login to purchase');
       return;
     }
-    
-    // Direct bypass for Free products
+    // Free product claim logic
     if (product.is_free) {
        const { error } = await supabase.from('purchases').insert([{
          user_id: user.id,
          product_id: product.id,
          amount_paid: 0,
          status: 'completed',
-         razorpay_payment_id: 'FREE'
+         razorpay_payment_id: 'FREE' // Using same field for compatibility
        }]);
        if (error) toast.error('Failed to claim free product');
        else {
          toast.success('Successfully added to your profile! 🎉');
          setHasPurchased(true);
        }
-       return;
     }
-
-    // Razorpay flow for Paid products
-    const isLoaded = await loadRazorpayScript();
-    if (!isLoaded) {
-      toast.error('Failed to load Razorpay SDK');
-      return;
-    }
-
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: product.price * 100, // amount in paise
-      currency: "INR",
-      name: "USL Notes",
-      description: product.title,
-      handler: async function (response: any) {
-        const { error } = await supabase.from('purchases').insert([{
-          user_id: user.id,
-          product_id: product.id,
-          amount_paid: product.price,
-          razorpay_payment_id: response.razorpay_payment_id,
-          status: 'completed'
-        }]);
-
-        if (error) {
-          toast.error('Payment verified but failed to record purchase');
-        } else {
-          toast.success('Payment successful! 🎉');
-          setHasPurchased(true);
-        }
-      },
-      prefill: {
-        email: user.email,
-      },
-      theme: {
-        color: "#C8860A"
-      }
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.on('payment.failed', function (response: any) {
-      toast.error('Payment failed: ' + response.error.description);
-    });
-    rzp.open();
   };
 
   const handleDownload = async () => {
@@ -235,8 +189,9 @@ export default function ProductDetail() {
           </div>
           
           {!product.is_free && (
-            <p className="text-sm text-cream opacity-60 flex items-center gap-2">
-              🔒 Secure payment via Razorpay
+            <p className="text-sm text-cream opacity-60 flex items-center gap-2 mt-4">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              Secured by Cashfree Payments
             </p>
           )}
         </div>

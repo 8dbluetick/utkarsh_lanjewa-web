@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { loadRazorpayScript } from '../lib/razorpay';
+import { loadCashfreeScript } from '../lib/cashfree';
 import toast from 'react-hot-toast';
 
 export default function Checkout() {
@@ -50,62 +50,82 @@ export default function Checkout() {
       return;
     }
 
-    // Razorpay Flow
-    const isLoaded = await loadRazorpayScript();
+    // Cashfree Flow
+    const isLoaded = await loadCashfreeScript();
     if (!isLoaded) {
-      toast.error('Failed to load Razorpay SDK');
+      toast.error('Failed to load Cashfree SDK');
       setIsProcessing(false);
       return;
     }
 
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: total * 100, // paise
-      currency: "INR",
-      name: "USL Notes",
-      description: `Purchase of ${cart.length} study notes`,
-      handler: async function (response: any) {
-        toast.loading('Verifying payment...', { id: 'payment' });
-        
-        // Insert a record for each item in the cart
-        const inserts = cart.map(item => ({
-          user_id: user.id,
-          product_id: item.id,
-          amount_paid: item.is_free ? 0 : item.price,
-          status: 'completed',
-          razorpay_payment_id: response.razorpay_payment_id
-        }));
-
-        const { error } = await supabase.from('purchases').insert(inserts);
-
-        if (error) {
-          toast.error('Payment successful, but failed to record purchase. Please contact support.', { id: 'payment' });
-        } else {
-          toast.success('Payment successful! 🎉', { id: 'payment' });
-          clearCart();
-          navigate('/profile');
+    try {
+      toast.loading('Initializing secure payment...', { id: 'payment' });
+      
+      // 1. Call our Edge Function to get the payment_session_id
+      const { data: edgeData, error: edgeError } = await supabase.functions.invoke('create-cashfree-order', {
+        body: { 
+          amount: total,
+          customer_id: user.id,
+          customer_email: user.email,
+          customer_phone: '9999999999' // Replace with actual if available
         }
-        setIsProcessing(false);
-      },
-      prefill: {
-        email: user.email,
-      },
-      theme: {
-        color: "#C8860A"
-      },
-      modal: {
-        ondismiss: function() {
-          setIsProcessing(false);
-        }
+      });
+
+      if (edgeError || !edgeData?.payment_session_id) {
+        throw new Error(edgeData?.error || 'Failed to create Cashfree session');
       }
-    };
 
-    const rzp = new (window as any).Razorpay(options);
-    rzp.on('payment.failed', function (response: any) {
-      toast.error('Payment failed: ' + response.error.description);
+      const { payment_session_id } = edgeData;
+
+      toast.dismiss('payment');
+
+      // 2. Initialize Cashfree
+      const cashfree = (window as any).Cashfree({
+        mode: "sandbox", // CHANGE TO "production" WHEN LIVE
+      });
+
+      // 3. Open Checkout
+      cashfree.checkout({
+        paymentSessionId: payment_session_id,
+        returnUrl: window.location.origin + "/profile?order_id={order_id}",
+      }).then(async (result: any) => {
+        if (result.error) {
+          toast.error('Payment failed: ' + result.error.message);
+          setIsProcessing(false);
+          return;
+        }
+        if (result.redirect) {
+          // If Cashfree redirects (like for UPI apps), handle it gracefully
+          return;
+        }
+        if (result.paymentDetails) {
+           toast.loading('Verifying payment...', { id: 'payment_verify' });
+           // Insert a record for each item in the cart
+           const inserts = cart.map(item => ({
+             user_id: user.id,
+             product_id: item.id,
+             amount_paid: item.is_free ? 0 : item.price,
+             status: 'completed',
+             razorpay_payment_id: payment_session_id // Store session ID for reference
+           }));
+
+           const { error } = await supabase.from('purchases').insert(inserts);
+
+           if (error) {
+             toast.error('Payment successful, but failed to record purchase. Please contact support.', { id: 'payment_verify' });
+           } else {
+             toast.success('Payment successful! 🎉', { id: 'payment_verify' });
+             clearCart();
+             navigate('/profile');
+           }
+           setIsProcessing(false);
+        }
+      });
+
+    } catch (error: any) {
+      toast.error('Error starting payment: ' + error.message, { id: 'payment' });
       setIsProcessing(false);
-    });
-    rzp.open();
+    }
   };
 
   return (
@@ -174,7 +194,7 @@ export default function Checkout() {
 
              <div className="mt-4 flex items-center justify-center gap-2 text-sm text-cream opacity-60">
                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-               Secured by Razorpay
+               Secured by Cashfree Payments
              </div>
           </div>
         </div>
