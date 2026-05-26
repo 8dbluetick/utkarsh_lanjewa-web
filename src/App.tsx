@@ -64,6 +64,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 import AdminProducts from './pages/admin/Products';
+import AdminCoupons from './pages/admin/Coupons';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminOrders from './pages/admin/Orders';
 import AdminSubscribers from './pages/admin/Subscribers';
