@@ -20,6 +20,7 @@ export default function ProductDetail() {
       const { data } = await supabase.from('products').select('*').eq('id', id).single();
       if (data) {
         setProduct(data);
+        if (data.is_free) setHasPurchased(true); // Free products are always "purchased"
         
         // Fetch related
         const { data: rel } = await supabase
@@ -37,7 +38,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     async function checkPurchase() {
-      if (!user || !id) return;
+      if (!user || !id || !product || product.is_free) return;
       const { data } = await supabase
         .from('purchases')
         .select('*')
@@ -49,7 +50,7 @@ export default function ProductDetail() {
       }
     }
     checkPurchase();
-  }, [user, id]);
+  }, [user, id, product]);
 
   const handleBuyNow = async () => {
     if (!user) {
@@ -57,6 +58,24 @@ export default function ProductDetail() {
       return;
     }
     
+    // Direct bypass for Free products
+    if (product.is_free) {
+       const { error } = await supabase.from('purchases').insert([{
+         user_id: user.id,
+         product_id: product.id,
+         amount_paid: 0,
+         status: 'completed',
+         razorpay_payment_id: 'FREE'
+       }]);
+       if (error) toast.error('Failed to claim free product');
+       else {
+         toast.success('Successfully added to your profile! 🎉');
+         setHasPurchased(true);
+       }
+       return;
+    }
+
+    // Razorpay flow for Paid products
     const isLoaded = await loadRazorpayScript();
     if (!isLoaded) {
       toast.error('Failed to load Razorpay SDK');
@@ -70,7 +89,6 @@ export default function ProductDetail() {
       name: "USL Notes",
       description: product.title,
       handler: async function (response: any) {
-        // Create purchase record
         const { error } = await supabase.from('purchases').insert([{
           user_id: user.id,
           product_id: product.id,
@@ -103,13 +121,13 @@ export default function ProductDetail() {
 
   const handleDownload = async () => {
     if (!product.file_url) {
-      toast.error('File not available for this product yet.');
+      toast.error('Main file not available for this product yet.');
       return;
     }
     try {
       const { data, error } = await supabase.storage
         .from('ebooks')
-        .createSignedUrl(product.file_url, 3600); // 1 hour expiry
+        .createSignedUrl(product.file_url, 3600); 
         
       if (error) throw error;
       if (data?.signedUrl) {
@@ -126,22 +144,41 @@ export default function ProductDetail() {
   return (
     <div className="container mx-auto px-6 py-12 pt-24">
       <div className="flex flex-col md:flex-row gap-12 mb-16">
-        {/* Left Column */}
+        {/* Left Column (Banner/Video) */}
         <div className="md:w-1/2">
-          <div className="rounded-xl overflow-hidden shadow-[0_0_30px_rgba(200,134,10,0.15)] bg-gray-900 aspect-video relative">
-            {product.banner_url ? (
-               <img src={product.banner_url} alt={product.title} className="w-full h-full object-cover" />
-            ) : (
-               <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
-            )}
-          </div>
+          {product.video_url ? (
+            <div className="rounded-xl overflow-hidden shadow-[0_0_30px_rgba(200,134,10,0.15)] bg-black aspect-video relative">
+              <video 
+                src={product.video_url} 
+                controls 
+                className="w-full h-full object-contain"
+                poster={product.banner_url || ''}
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl overflow-hidden shadow-[0_0_30px_rgba(200,134,10,0.15)] bg-gray-900 aspect-video relative">
+              {product.banner_url ? (
+                 <img src={product.banner_url} alt={product.title} className="w-full h-full object-cover" />
+              ) : (
+                 <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Column */}
         <div className="md:w-1/2 flex flex-col justify-center">
-          <span className="inline-block bg-maroon/20 text-maroon font-bold px-3 py-1 rounded-full text-sm w-max mb-4 uppercase tracking-wider border border-maroon/30">
-            {product.subject}
-          </span>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="inline-block bg-maroon/20 text-maroon font-bold px-3 py-1 rounded-full text-sm uppercase tracking-wider border border-maroon/30">
+              {product.subject}
+            </span>
+            {product.is_free && (
+              <span className="inline-block bg-blue-500/20 text-blue-400 font-bold px-3 py-1 rounded-full text-sm uppercase tracking-wider border border-blue-500/30">
+                FREE
+              </span>
+            )}
+          </div>
+          
           <h1 className="text-3xl md:text-4xl font-playfair text-white mb-4 leading-tight">{product.title}</h1>
           
           <div className="flex items-center gap-2 mb-6">
@@ -150,8 +187,10 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-end gap-4 mb-8">
-            <span className="text-5xl font-bold text-gold font-playfair">₹{product.price}</span>
-            {product.original_price && (
+            <span className="text-5xl font-bold text-gold font-playfair">
+              {product.is_free ? 'FREE' : `₹${product.price}`}
+            </span>
+            {product.original_price && !product.is_free && (
               <>
                 <span className="text-xl text-gray-500 line-through mb-1">₹{product.original_price}</span>
                 <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-sm font-bold mb-1 border border-green-500/30">
@@ -161,19 +200,35 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {hasPurchased ? (
-            <button onClick={handleDownload} className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl transition-colors w-full md:w-auto px-12 shadow-lg mb-4">
-              Download Notes
-            </button>
-          ) : (
-            <button onClick={handleBuyNow} className="bg-gold hover:bg-yellow-500 text-primary font-bold py-4 rounded-xl transition-colors w-full md:w-auto px-12 shadow-[0_0_15px_rgba(200,134,10,0.4)] mb-4 text-lg">
-              Buy Now
-            </button>
-          )}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            {hasPurchased ? (
+              <button onClick={handleDownload} className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl transition-colors px-8 shadow-lg flex-1">
+                Download {product.is_free ? 'Free Notes' : 'Purchased Notes'}
+              </button>
+            ) : (
+              <button onClick={handleBuyNow} className="bg-gold hover:bg-yellow-500 text-primary font-bold py-4 rounded-xl transition-colors px-8 shadow-[0_0_15px_rgba(200,134,10,0.4)] flex-1 text-lg">
+                {product.is_free ? 'Claim For Free' : 'Buy Now'}
+              </button>
+            )}
+
+            {/* Free Sample Button (if applicable) */}
+            {product.free_pdf_url && !product.is_free && (
+               <a 
+                 href={product.free_pdf_url} 
+                 target="_blank" 
+                 rel="noreferrer"
+                 className="bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-8 rounded-xl transition-colors flex-1 text-center"
+               >
+                 View Free Sample
+               </a>
+            )}
+          </div>
           
-          <p className="text-sm text-cream opacity-60 flex items-center gap-2">
-            🔒 Secure payment via Razorpay
-          </p>
+          {!product.is_free && (
+            <p className="text-sm text-cream opacity-60 flex items-center gap-2">
+              🔒 Secure payment via Razorpay
+            </p>
+          )}
         </div>
       </div>
 
@@ -198,7 +253,9 @@ export default function ProductDetail() {
                  </div>
                  <div>
                    <h4 className="font-playfair text-white line-clamp-2 mb-1">{rel.title}</h4>
-                   <span className="text-gold font-bold">₹{rel.price}</span>
+                   <span className="text-gold font-bold">
+                     {rel.is_free ? 'FREE' : `₹${rel.price}`}
+                   </span>
                  </div>
                </Link>
              ))}
